@@ -1,7 +1,15 @@
-cmake_minimum_required(VERSION 3.0)
+﻿cmake_minimum_required(VERSION 3.0)
 project(Torch)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") # 添加c++11标准支持
+
+option (Debug "build with Debug otherwise build with Realease" OFF)
+
+if (Debug)
+    set(Torch_DIR "E:/Toolkits/libtorch/Debug/share/cmake/Torch")  # build with Debug
+else()
+    set(Torch_DIR "E:/Toolkits/libtorch/Realease/share/cmake/Torch")  # build with Realease
+endif (Debug)
 
 find_package(Torch REQUIRED)
 include_directories( ${TORCH_INCLUDE_DIRS} )

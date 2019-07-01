@@ -1,3 +1,4 @@
+#include <time.h> 
 #include <memory>
 #include <string>
 #include <iostream>
@@ -9,37 +10,51 @@
 #include <opencv2/imgproc/types_c.h>
 #include <opencv2/imgproc/imgproc.hpp>
 
-
 int main()
 {
 	std::string modle_dir = "../model/resnet18.pt";
 	std::string image_dir = "../data/dog.png";
 	std::string label_file = "../data/synset_words.txt";
 
-	// 加载模型
+	// load model
 	std::shared_ptr<torch::jit::script::Module> module = torch::jit::load(modle_dir);
 	module->to(at::kCUDA);
-	std::cout << "load model" << std::endl;
 
+	if (module == nullptr)
+	{
+		std::cout << "load error" << std::endl;
+		return -1;
+	}
+	else
+		std::cout << "load success" << std::endl;
+
+	// read input image
 	cv::Mat image = cv::imread(image_dir, 1);
 	cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
 	cv::resize(image, image, cv::Size(224, 224));
 	
+	// convert opencv Mat to torch Tensor
 	torch::Tensor tensor_image = torch::from_blob(image.data, { 1,224, 224,3 }, torch::kByte);
 	tensor_image = tensor_image.permute({ 0,3,1,2 });
 	tensor_image = tensor_image.toType(torch::kFloat);
-	tensor_image = tensor_image.div(255);
 
-	tensor_image[0][0] = tensor_image[0][0].sub_(0.485).div_(0.229);
-	tensor_image[0][1] = tensor_image[0][1].sub_(0.456).div_(0.224);
-	tensor_image[0][2] = tensor_image[0][2].sub_(0.406).div_(0.225);
+	// sub mean and div std
+	double mean[] = { 0.485, 0.456, 0.406 };
+	double std[] = {0.229, 0.224, 0.225};
+
+	tensor_image = tensor_image.div(255);
+	tensor_image[0][0] = tensor_image[0][0].sub_(mean[0]).div_(std[0]);
+	tensor_image[0][1] = tensor_image[0][1].sub_(mean[1]).div_(std[1]);
+	tensor_image[0][2] = tensor_image[0][2].sub_(mean[2]).div_(std[2]);
 
 	tensor_image = tensor_image.to(torch::kCUDA);
 
 	// Execute the model and turn its output into a tensor.
+	auto start = clock();
 	torch::Tensor output = module->forward({tensor_image}).toTensor();
+	auto end = clock();
+	std::cout << "time: " << static_cast<double>(end - start) / CLOCKS_PER_SEC << 's' << std::endl;
 	output = output.to(torch::kCPU);
-	std::cout << output.device() << std::endl;
 
 	// Load labels
 	std::ifstream rf(label_file.c_str());
@@ -72,3 +87,4 @@ int main()
 // top - 3 label : n02109047 Great Dane, score : 12.8467
 // top - 4 label : n02093256 Staffordshire bullterrier, Staffordshire bull terrier, score : 12.1757
 // top - 5 label : n02110958 pug, pug - dog, score : 11.9858
+// time: 0.85s

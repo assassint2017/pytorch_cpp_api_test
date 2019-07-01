@@ -1,21 +1,23 @@
+from time import time
+
+import numpy as np
+from PIL import Image
+
 import torch
 import torchvision
 from torchvision import transforms
-from PIL import Image
-from time import time
-import numpy as np
 
 # An instance of your model.
 model = torchvision.models.resnet18(pretrained=False).cuda()
 model.load_state_dict(torch.load('../model/resnet18-5c106cde.pth'))
 model.eval()
 
-# An example input you would normally provide to your model's forward() method.
-example = torch.rand(1, 3, 224, 224).cuda()
+# # An example input you would normally provide to your model's forward() method.
+# example = torch.rand(1, 3, 224, 224).cuda()
 
-# Use torch.jit.trace to generate a torch.jit.ScriptModule via tracing.
-traced_script_module = torch.jit.trace(model, example)
-traced_script_module.save("../model/resnet18.pt")
+# # Use torch.jit.trace to generate a torch.jit.ScriptModule via tracing.
+# traced_script_module = torch.jit.trace(model, example)
+# traced_script_module.save("../model/resnet18.pt")
 
 # read image
 image = Image.open('../data/dog.png').convert('RGB')
@@ -29,8 +31,11 @@ image = default_transform(image)
 image = image.cuda()
 
 # forward
-output = traced_script_module(image.unsqueeze(0))
-print(output.size())
+start = time()
+output = model(image.unsqueeze(0))
+end = time()
+
+print(end - start)
 
 # print top-5 predicted labels
 labels = np.loadtxt('../data/synset_words.txt', dtype=str, delimiter='\n')
@@ -46,3 +51,5 @@ for i,idx in enumerate(sorted_idxs[:5]):
 # top-2 label: n02109047 Great Dane, score: 13.340916
 # top-3 label: n02093256 Staffordshire bullterrier, Staffordshire bull terrier, score: 12.602612
 # top-4 label: n02108089 boxer, score: 11.998150
+
+# inference time : 0.76s
