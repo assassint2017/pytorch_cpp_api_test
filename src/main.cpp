@@ -82,9 +82,11 @@ int main()
 	return 0;
 }
 
+// almost the same with python
 // top - 1 label: n02108422 bull mastiff, score : 17.9906
 // top - 2 label : n02093428 American Staffordshire terrier, Staffordshire terrier, American pit bull terrier, pit bull terrier, score : 13.3816
 // top - 3 label : n02109047 Great Dane, score : 12.8467
 // top - 4 label : n02093256 Staffordshire bullterrier, Staffordshire bull terrier, score : 12.1757
 // top - 5 label : n02110958 pug, pug - dog, score : 11.9858
-// time: 0.85s
+
+// inference time: 0.85s a little bit slower than python
